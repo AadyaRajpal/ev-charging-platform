@@ -160,32 +160,6 @@ ev-charging-platform/
 - Google Cloud Platform Account (Maps API)
 - React Native development environment
 
-### Environment Variables
-
-Create a `.env` file in the backend directory:
-
-```env
-# Firebase
-FIREBASE_CREDENTIALS_PATH=path/to/firebase-credentials.json
-
-# Stripe
-STRIPE_SECRET_KEY=sk_test_xxxxx
-STRIPE_PUBLISHABLE_KEY=pk_test_xxxxx
-
-# Google Maps
-GOOGLE_MAPS_API_KEY=AIzaSyXXXXXXXXXXXXXXXXXXX
-
-# Provider APIs
-CHARGEPOINT_API_KEY=xxxxx
-EVGO_API_KEY=xxxxx
-
-# JWT
-SECRET_KEY=your-secret-key-here
-ALGORITHM=HS256
-
-# Database
-DATABASE_URL=postgresql://user:password@localhost/evcharging
-```
 
 ### Backend Setup
 
@@ -238,35 +212,6 @@ npm install
 npm start
 ```
 
-## 📱 API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/refresh` - Refresh access token
-
-### Stations
-- `GET /api/stations/nearby` - Get nearby charging stations
-- `GET /api/stations/{id}` - Get station details
-- `GET /api/stations/{id}/availability` - Real-time availability
-
-### Payments
-- `POST /api/payments/create-intent` - Create payment intent
-- `POST /api/payments/confirm` - Confirm payment
-- `GET /api/payments/methods` - Get saved payment methods
-- `POST /api/payments/methods` - Add payment method
-
-### Charging Sessions
-- `POST /api/sessions/start` - Start charging session
-- `POST /api/sessions/{id}/stop` - Stop charging session
-- `GET /api/sessions/active` - Get active sessions
-- `GET /api/sessions/history` - Get session history
-
-### User
-- `GET /api/user/profile` - Get user profile
-- `PUT /api/user/profile` - Update user profile
-- `GET /api/user/vehicles` - Get user vehicles
-- `POST /api/user/vehicles` - Add vehicle
 
 ## 🔐 Security Features
 
@@ -290,46 +235,12 @@ pytest
 cd mobile
 npm test
 ```
-
-## 📊 Future Enhancements
-
-- [ ] Multi-language support
-- [ ] Route planning with charging stops
-- [ ] Reservation system
-- [ ] Loyalty programs and rewards
-- [ ] Carbon footprint tracking
-- [ ] Social features (reviews, ratings)
-- [ ] Integration with vehicle telematics
-- [ ] Dynamic pricing alerts
-- [ ] Membership subscriptions
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+ Membership subscriptions
 
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 👥 Authors
 
-- Your Name - [GitHub](https://github.com/yourusername)
 
-## 🙏 Acknowledgments
 
-- Google Maps Platform for location services
-- Stripe for payment infrastructure
-- Firebase for real-time capabilities
-- All EV charging network providers for their APIs
-
-## 📧 Contact
-
-For questions or support, please open an issue or contact [your-email@example.com]
-
----
-
-⚡ **Powering the future of EV charging, one transaction at a time.**
