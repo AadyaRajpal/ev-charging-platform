@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EVFind — Charging Station Locator</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0f0d;
+      --surface: #111812;
+      --surface2: #172019;
+      --border: #1e2e21;
+      --accent: #00ff87;
+      --accent-dim: #00c96a;
+      --accent-glow: rgba(0,255,135,0.15);
+      --text: #e8f5ec;
+      --text-muted: #6b8c72;
+      --red: #ff4d6a;
+      --yellow: #ffd166;
+      --font-display: 'Syne', sans-serif;
+      --font-mono: 'DM Mono', monospace;
+    }
+
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--font-mono); }
+
+    /* ---- HEADER ---- */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      position: sticky; top: 0; z-index: 1000;
+    }
+    .logo {
+      font-family: var(--font-display);
+      font-size: 1.4rem; font-weight: 800; letter-spacing: -0.03em;
+      color: var(--accent);
+    }
+    .logo span { color: var(--text); }
+    .header-tag {
+      font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase;
+      color: var(--text-muted); border: 1px solid var(--border);
+      padding: 4px 10px; border-radius: 20px;
+    }
+
+    /* ---- LAYOUT ---- */
+    .app { display: flex; height: calc(100vh - 61px); }
+
+    /* ---- SIDEBAR ---- */
+    .sidebar {
+      width: 380px; min-width: 340px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex; flex-direction: column;
+      overflow: hidden;
+    }
+
+    .search-panel {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .search-panel h2 {
+      font-family: var(--font-display);
+      font-size: 1rem; font-weight: 700;
+      margin-bottom: 14px; color: var(--text);
+    }
+
+    .input-row { display: flex; gap: 8px; margin-bottom: 10px; }
+    .input-group { flex: 1; }
+    label { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 5px; }
+    input[type="number"], input[type="text"] {
+      width: 100%; background: var(--surface2);
+      border: 1px solid var(--border); color: var(--text);
+      font-family: var(--font-mono); font-size: 0.82rem;
+      padding: 9px 12px; border-radius: 6px; outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus { border-color: var(--accent); }
+
+    .btn-locate {
+      width: 100%; padding: 10px;
+      background: transparent; border: 1px solid var(--accent);
+      color: var(--accent); font-family: var(--font-mono);
+      font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase;
+      border-radius: 6px; cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 10px;
+    }
+    .btn-locate:hover { background: var(--accent-glow); }
+
+    .btn-search {
+      width: 100%; padding: 11px;
+      background: var(--accent); border: none;
+      color: #0a0f0d; font-family: var(--font-display);
+      font-size: 0.85rem; font-weight: 700; letter-spacing: 0.05em;
+      border-radius: 6px; cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-search:hover { background: var(--accent-dim); }
+    .btn-search:active { transform: scale(0.98); }
+    .btn-search:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ---- STATION LIST ---- */
+    .station-list { flex: 1; overflow-y: auto; padding: 12px; }
+    .station-list::-webkit-scrollbar { width: 4px; }
+    .station-list::-webkit-scrollbar-track { background: transparent; }
+    .station-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .list-header {
+      font-size: 0.65rem; letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-muted); padding: 4px 4px 12px;
+    }
+
+    .station-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 14px; margin-bottom: 8px;
+      cursor: pointer; transition: border-color 0.2s, background 0.2s;
+      position: relative; overflow: hidden;
+    }
+    .station-card:hover { border-color: var(--accent); background: #1a2a1d; }
+    .station-card.active { border-color: var(--accent); background: #1a2a1d; }
+    .station-card.active::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 3px; background: var(--accent);
+    }
+
+    .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 6px; }
+    .card-name {
+      font-family: var(--font-display); font-size: 0.88rem; font-weight: 600;
+      color: var(--text); line-height: 1.3;
+    }
+    .status-badge {
+      font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase;
+      padding: 3px 8px; border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+      font-weight: 500;
+    }
+    .status-available { background: rgba(0,255,135,0.12); color: var(--accent); border: 1px solid rgba(0,255,135,0.2); }
+    .status-unavailable { background: rgba(255,77,106,0.12); color: var(--red); border: 1px solid rgba(255,77,106,0.2); }
+    .status-unknown { background: rgba(255,209,102,0.1); color: var(--yellow); border: 1px solid rgba(255,209,102,0.2); }
+
+    .card-address { font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px; line-height: 1.4; }
+
+    .card-meta { display: flex; gap: 10px; flex-wrap: wrap; }
+    .meta-chip {
+      font-size: 0.62rem; padding: 2px 8px; border-radius: 4px;
+      background: var(--surface); border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    /* ---- STATE MESSAGES ---- */
+    .state-msg {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      height: 60%; gap: 10px; color: var(--text-muted); text-align: center; padding: 20px;
+    }
+    .state-msg .icon { font-size: 2.5rem; }
+    .state-msg p { font-size: 0.8rem; line-height: 1.6; }
+    .error-msg { color: var(--red); }
+
+    /* ---- MAP ---- */
+    #map { flex: 1; background: #0d1a10; }
+
+    /* Leaflet dark override */
+    .leaflet-tile { filter: brightness(0.85) saturate(0.6) hue-rotate(100deg); }
+    .leaflet-container { background: #0a0f0d; }
+
+    /* Custom marker */
+    .ev-marker {
+      width: 28px; height: 28px; background: var(--accent);
+      border-radius: 50% 50% 50% 0; transform: rotate(-45deg);
+      border: 2px solid #0a0f0d;
+      box-shadow: 0 0 10px var(--accent);
+    }
+    .ev-marker.unavailable { background: var(--red); box-shadow: 0 0 10px var(--red); }
+    .ev-marker.active-marker { background: #fff; box-shadow: 0 0 14px #fff; }
+
+    .leaflet-popup-content-wrapper {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-family: var(--font-mono);
+    }
+    .leaflet-popup-tip { background: var(--surface2); }
+    .popup-name { font-family: var(--font-display); font-weight: 700; font-size: 0.9rem; margin-bottom: 4px; }
+    .popup-detail { font-size: 0.72rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* Spinner */
+    .spinner {
+      width: 20px; height: 20px;
+      border: 2px solid var(--border); border-top-color: var(--accent);
+      border-radius: 50%; animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">EV<span>Find</span></div>
+  <div class="header-tag">Charging Station Locator</div>
+</header>
+
+<div class="app">
+  <div class="sidebar">
+    <div class="search-panel">
+      <h2>Find Nearby Stations</h2>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Latitude</label>
+          <input type="number" id="lat" step="any" placeholder="12.9716"/>
+        </div>
+        <div class="input-group">
+          <label>Longitude</label>
+          <input type="number" id="lng" step="any" placeholder="77.5946"/>
+        </div>
+      </div>
+      <div class="input-row">
+        <div class="input-group">
+          <label>Radius (km)</label>
+          <input type="number" id="radius" value="10" min="1" max="100"/>
+        </div>
+        <div class="input-group">
+          <label>Max Results</label>
+          <input type="number" id="maxResults" value="20" min="1" max="50"/>
+        </div>
+      </div>
+      <button class="btn-locate" onclick="useMyLocation()">⊕ Use My Location</button>
+      <button class="btn-search" id="searchBtn" onclick="searchStations()">Search Stations</button>
+    </div>
+
+    <div class="station-list" id="stationList">
+      <div class="state-msg">
+        <div class="icon">⚡</div>
+        <p>Enter a location and search<br/>to find EV charging stations nearby.</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="map"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const API_BASE = "http://localhost:8000";
+
+  let map, markers = [], activeCard = null, stationsData = [];
+
+  document.addEventListener('DOMContentLoaded', () => {
+    map = L.map('map', { zoomControl: true }).setView([20, 78], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+  });
+
+  function useMyLocation() {
+    if (!navigator.geolocation) return alert("Geolocation not supported by your browser.");
+    navigator.geolocation.getCurrentPosition(pos => {
+      document.getElementById('lat').value = pos.coords.latitude.toFixed(5);
+      document.getElementById('lng').value = pos.coords.longitude.toFixed(5);
+    }, () => alert("Could not get your location. Please enter manually."));
+  }
+
+  async function searchStations() {
+    const lat = parseFloat(document.getElementById('lat').value);
+    const lng = parseFloat(document.getElementById('lng').value);
+    const radius = parseInt(document.getElementById('radius').value) || 10;
+    const maxResults = parseInt(document.getElementById('maxResults').value) || 20;
+
+    if (isNaN(lat) || isNaN(lng)) {
+      showMessage("⚠️", "Please enter valid latitude and longitude.", false);
+      return;
+    }
+
+    const btn = document.getElementById('searchBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+    showMessage("", "Searching...", false);
+
+    try {
+      const res = await fetch(`${API_BASE}/stations?lat=${lat}&lng=${lng}&radius=${radius}&max_results=${maxResults}`);
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const data = await res.json();
+      stationsData = data.stations;
+      renderStations(stationsData, lat, lng);
+    } catch (err) {
+      showMessage("✕", `Could not connect to backend.\n\nMake sure the FastAPI server is running at ${API_BASE}\n\n${err.message}`, true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Search Stations';
+    }
+  }
+
+  function renderStations(stations, centerLat, centerLng) {
+    clearMarkers();
+    const list = document.getElementById('stationList');
+
+    if (stations.length === 0) {
+      showMessage("🔍", "No stations found in this area.\nTry increasing the radius.", false);
+      return;
+    }
+
+    list.innerHTML = `<div class="list-header">${stations.length} stations found</div>`;
+    map.setView([centerLat, centerLng], 12);
+
+    stations.forEach((s, i) => {
+      const card = document.createElement('div');
+      card.className = 'station-card';
+      card.id = `card-${i}`;
+
+      const statusClass = s.status === 'Available' ? 'status-available'
+        : s.status === 'Unavailable' ? 'status-unavailable' : 'status-unknown';
+
+      const address = [s.address, s.city, s.state].filter(Boolean).join(', ');
+      const connectors = s.connectors.length > 0
+        ? s.connectors.slice(0, 3).map(c => `<span class="meta-chip">${c}</span>`).join('')
+        : '<span class="meta-chip">Unknown connector</span>';
+
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="card-name">${s.name}</div>
+          <span class="status-badge ${statusClass}">${s.status}</span>
+        </div>
+        <div class="card-address">${address || 'Address not available'}</div>
+        <div class="card-meta">
+          ${connectors}
+          <span class="meta-chip">⚡ ${s.num_points || '?'} points</span>
+        </div>
+      `;
+      card.onclick = () => focusStation(i);
+      list.appendChild(card);
+
+      if (s.lat && s.lng) {
+        const markerIcon = L.divIcon({
+          className: '',
+          html: `<div class="ev-marker ${s.status === 'Unavailable' ? 'unavailable' : ''}"></div>`,
+          iconSize: [28, 28], iconAnchor: [14, 28], popupAnchor: [0, -30]
+        });
+
+        const marker = L.marker([s.lat, s.lng], { icon: markerIcon })
+          .bindPopup(`
+            <div class="popup-name">${s.name}</div>
+            <div class="popup-detail">
+              ${address || ''}<br/>
+              <strong style="color:var(--accent)">${s.status}</strong> · ${s.num_points || '?'} charging points<br/>
+              ${s.operator}
+            </div>
+          `)
+          .on('click', () => focusStation(i))
+          .addTo(map);
+        markers.push({ marker, index: i });
+      }
+    });
+  }
+
+  function focusStation(i) {
+    const s = stationsData[i];
+    if (activeCard !== null) document.getElementById(`card-${activeCard}`)?.classList.remove('active');
+    const card = document.getElementById(`card-${i}`);
+    card?.classList.add('active');
+    card?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    activeCard = i;
+    if (s.lat && s.lng) {
+      map.flyTo([s.lat, s.lng], 15, { duration: 0.8 });
+      const m = markers.find(m => m.index === i);
+      if (m) m.marker.openPopup();
+    }
+  }
+
+  function clearMarkers() {
+    markers.forEach(m => map.removeLayer(m.marker));
+    markers = [];
+    activeCard = null;
+  }
+
+  function showMessage(icon, text, isError) {
+    document.getElementById('stationList').innerHTML = `
+      <div class="state-msg ${isError ? 'error-msg' : ''}">
+        <div class="icon">${icon}</div>
+        <p>${text.replace(/\n/g, '<br/>')}</p>
+      </div>
+    `;
+  }
+
+  document.addEventListener('keydown', e => { if (e.key === 'Enter') searchStations(); });
+</script>
+</body>
+</html>
