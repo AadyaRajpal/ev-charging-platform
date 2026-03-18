@@ -1,55 +1,49 @@
 # EV Charging Aggregator
 
-A minimal, working EV station finder. FastAPI backend + React (plain HTML) frontend.
-Uses the [Open Charge Map API](https://openchargemap.org) for real station data.
+A web app to find nearby EV charging stations using real-time data from Open Charge Map.
+
+## Tech Stack
+
+- **Backend** — Python, FastAPI
+- **Frontend** — HTML, CSS, JavaScript
+- **Map** — Leaflet + OpenStreetMap
+- **Data** — Open Charge Map API
+
+## Features
+
+- Search EV stations by location and radius
+- Interactive map with clickable markers
+- Station details — connector types, availability status, operator
+- "Use My Location" for quick search
 
 ## Project Structure
 
 ```
 ev-charging-platform/
 ├── backend/
-│   ├── main.py           # FastAPI app — /stations endpoint
+│   ├── main.py           # FastAPI server
 │   └── requirements.txt
 └── frontend/
-    └── index.html        # React-style single-page app
+    └── index.html        # Single-page web app
 ```
 
-## Running the Backend
+## Setup
 
+**Backend**
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate       # Windows: venv\Scripts\activate
+source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-API runs at: http://localhost:8000
-Docs at: http://localhost:8000/docs
+**Frontend**
 
-## Running the Frontend
+Open `frontend/index.html` in your browser. No build step required.
 
-Just open `frontend/index.html` in your browser. No build step needed.
+## API
 
-## API Endpoint
+`GET /stations?lat={lat}&lng={lng}&radius={km}&max_results={n}`
 
-### GET /stations
-Returns nearby EV charging stations from Open Charge Map.
-
-**Query params:**
-| Param | Type | Default | Description |
-|---|---|---|---|
-| lat | float | required | Latitude |
-| lng | float | required | Longitude |
-| radius | int | 10 | Search radius in km |
-| max_results | int | 20 | Max stations to return |
-
-**Example:**
-```
-GET /stations?lat=12.9716&lng=77.5946&radius=10
-```
-
-## Future Integrations (not yet built)
-- Firebase auth
-- Stripe payments
-- Real-time availability via WebSockets
+Returns a list of nearby EV charging stations with location, status, and connector info.
