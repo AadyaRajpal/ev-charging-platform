@@ -1,0 +1,36 @@
+{
+  "expo": {
+    "name": "EVFind",
+    "slug": "ev-charging-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#0a0f0d"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "Used to find EV stations near you."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0a0f0d"
+      },
+      "permissions": [
+        "ACCESS_FINE_LOCATION"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Used to find EV stations near you."
+        }
+      ],
+      "expo-font"
+    ]
+  }
+}
